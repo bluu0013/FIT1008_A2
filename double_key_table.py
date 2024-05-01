@@ -132,7 +132,21 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                 if self.array[i] is not None:
                     res.append(self.array[i][0])
 
-        return iter(res) 
+        class KeysIterator:
+            def __init__ (self, data):
+                self.data = data
+                self.index = 0
+            def __iter__(self):
+                return self
+            def __next__(self):
+                if self.index < len(self.data):
+                    result = self.data[self.index]
+                    self.index += 1
+                    return result
+                else:
+                    raise StopIteration
+        
+        return KeysIterator(res)
 
     def iter_values(self, key: K1 | None = None) -> Iterator[V]:
         """
@@ -165,13 +179,16 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         res = []
         if key is not None:
-            keyIter = self.iter_keys(key)
-            for x in keyIter:
-                res.append(x)
+            pos = self.hash1(key)
+            if self.array[pos] is not None:
+                for i in range(self.array[pos][1].table_size):
+                    if self.array[pos][1].array[i] is not None:
+                        res.append(self.array[pos][1].array[i][0])
+
         else:
-            keyIter = self.iter_keys()
-            for x in keyIter:
-                res.append(x)
+            for i in range(self.table_size):
+                if self.array[i] is not None:
+                    res.append(self.array[i][0])
 
         return res    
 
@@ -182,15 +199,20 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         res = []
         if key is not None:
-            keyIter = self.iter_values(key)
-            for x in keyIter:
-                res.append(x)
-        else:
-            keyIter = self.iter_values()
-            for x in keyIter:
-                res.append(x)
+            pos = self.hash1(key)
+            if self.array[pos] is not None:
+                for i in range(self.array[pos][1].table_size):
+                    if self.array[pos][1].array[i] is not None:
+                        res.append(self.array[pos][1].array[i][1])
 
-        return res
+        else:
+            for i in range(self.table_size):
+                if self.array[i] is not None:
+                    for j in range(self.array[i][1].table_size):
+                        if self.array[i][1].array[j] is not None:
+                            res.append(self.array[i][1].array[j][1])
+
+        return res 
 
     def __contains__(self, key: tuple[K1, K2]) -> bool:
         """
