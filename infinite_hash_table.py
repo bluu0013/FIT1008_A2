@@ -37,13 +37,33 @@ class InfiniteHashTable(Generic[K, V]):
 
         :raises KeyError: when the key doesn't exist.
         """
-        raise NotImplementedError()
+        pos = self.hash(pos)
+
+        if self.array[pos] is None:
+            raise KeyError(key)
+        else:
+            if self.array[pos][0] == key:
+                return self.array[pos][1]
+            else:
+                sub_table = self.array[pos][1]
+                return sub_table[key]
 
     def __setitem__(self, key: K, value: V) -> None:
         """
         Set an (key, value) pair in our hash table.
         """
-        raise NotImplementedError()
+        pos = self.hash(key)
+        self.count += 1
+
+        if self.array[pos] is None:
+            self.array[pos] = (key,value)
+        else:
+            old_key, old_value  = self.array[pos]
+            new_level = self.level + 1
+            self.array[pos] = (key[self.level], InfiniteHashTable(new_level))
+            sub_table = self.array[pos][1]
+            sub_table[old_key] = old_value
+            sub_table[key] = value          
 
     def __delitem__(self, key: K) -> None:
         """
@@ -51,10 +71,20 @@ class InfiniteHashTable(Generic[K, V]):
 
         :raises KeyError: when the key doesn't exist.
         """
-        raise NotImplementedError()
+        pos = self.hash(key)
+        self.count -= 1
+
+        if self.array[pos] is None:
+            raise KeyError(key)
+        else:
+            if self.array[pos][0] == key:
+                self.array[pos] = None
+            else:
+                sub_table = self.array[pos][1]
+                del sub_table[key]
 
     def __len__(self) -> int:
-        raise NotImplementedError()
+        return self.count
 
     def __str__(self) -> str:
         """
@@ -70,7 +100,18 @@ class InfiniteHashTable(Generic[K, V]):
 
         :raises KeyError: when the key doesn't exist.
         """
-        raise NotImplementedError()
+        res = []
+        pos = self.hash(key)
+
+        if self.array[pos] is None:
+            raise KeyError(key)
+        else:
+            res.append(pos)
+            if self.array[pos][0] == key:
+                return res
+            else:
+                sub_table = self.array[pos][1]
+                return res + sub_table.get_location(key)
 
     def __contains__(self, key: K) -> bool:
         """
