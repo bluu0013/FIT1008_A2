@@ -55,8 +55,11 @@ class ComputerManager:
 
         :complexity: O(N) where N is the length of the current computer list.
         """
-        comp_copy = self.organiser.computers
+        comp_copy = []
         res = []
+        for i in self.organiser.computers:
+            comp_copy.append(i)
+
         while len(comp_copy) > 0:
             curr_diff = comp_copy[0].hacking_difficulty
             curr_list = self.computers_with_difficulty(curr_diff)
@@ -64,5 +67,6 @@ class ComputerManager:
                 if i in comp_copy:
                     comp_copy.remove(i)
             res.append(curr_list)
+            
         return res
         
