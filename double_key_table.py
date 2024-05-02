@@ -132,21 +132,14 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                 if self.array[i] is not None:
                     res.append(self.array[i][0])
 
-        class KeysIterator:
-            def __init__ (self, data):
-                self.data = data
-                self.index = 0
-            def __iter__(self):
-                return self
-            def __next__(self):
-                if self.index < len(self.data):
-                    result = self.data[self.index]
-                    self.index += 1
-                    return result
-                else:
-                    raise StopIteration
-        
-        return KeysIterator(res)
+        res.reverse()
+
+        def KeysGen():
+            for _ in range(len(res)):
+                yield res
+            return
+
+        return KeysGen()
 
     def iter_values(self, key: K1 | None = None) -> Iterator[V]:
         """
@@ -170,7 +163,14 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                         if self.array[i][1].array[j] is not None:
                             res.append(self.array[i][1].array[j][1])
 
-        return iter(res)
+        res.reverse()
+
+        def ValuesGen():
+            for _ in range(len(res)):
+                yield res
+            return
+
+        return ValuesGen()
 
     def keys(self, key: K1 | None = None) -> list[K1 | K2]:
         """
@@ -179,18 +179,14 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         res = []
         if key is not None:
-            pos = self.hash1(key)
-            if self.array[pos] is not None:
-                for i in range(self.array[pos][1].table_size):
-                    if self.array[pos][1].array[i] is not None:
-                        res.append(self.array[pos][1].array[i][0])
+            keyIter = self.iter_keys(key)
+            res = next(keyIter)
 
         else:
-            for i in range(self.table_size):
-                if self.array[i] is not None:
-                    res.append(self.array[i][0])
+            keyIter = self.iter_keys()
+            res = next(keyIter)
 
-        return res    
+        return res
 
     def values(self, key: K1 | None = None) -> list[V]:
         """
@@ -199,18 +195,12 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         res = []
         if key is not None:
-            pos = self.hash1(key)
-            if self.array[pos] is not None:
-                for i in range(self.array[pos][1].table_size):
-                    if self.array[pos][1].array[i] is not None:
-                        res.append(self.array[pos][1].array[i][1])
+            valueIter = self.iter_values(key)
+            res = next(valueIter)
 
         else:
-            for i in range(self.table_size):
-                if self.array[i] is not None:
-                    for j in range(self.array[i][1].table_size):
-                        if self.array[i][1].array[j] is not None:
-                            res.append(self.array[i][1].array[j][1])
+            valueIter = self.iter_values()
+            res = next(valueIter)
 
         return res 
 
