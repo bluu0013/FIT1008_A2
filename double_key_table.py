@@ -73,6 +73,9 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         Find the correct position for this key in the hash table using linear probing.
 
+        :Best case complexity: O(hash1(key1)) when key2 is None, and the first position is available.
+        :Worst case complexity: O((hash1(key1) + N) * (hash2(key2) + M)) when for both positions, the whole
+                                table needs to be probed. N is the Outer table size, and M is the Inner table size.
         :raises KeyError: When the key pair is not in the table, but is_insert is False.
         :raises FullError: When a table is full and cannot be inserted.
         """
@@ -118,15 +121,17 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             Returns an iterator of all top-level keys in hash table
         key = k:
             Returns an iterator of all keys in the bottom-hash-table for k.
+
+        :Best case complexity: O(N) when key is None. N is the Outer table size.
+        :Worst case complexity: O(linear_probe(key) + N) when key is not None. N is the Outer table size.
         """
         res = []
         if key is not None:
-            pos1 = self.hash1(key)
+            pos1 = self._linear_probe(key, None ,False)
             sub_table = self.array[pos1][1]
             for i in range(sub_table.table_size):
                 if sub_table.array[i] is not None:
-                    res.append(sub_table.array[i][0])
-            
+                    res.append(sub_table.array[i][0])   
         else:
             for i in range(self.table_size):
                 if self.array[i] is not None:
@@ -135,7 +140,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         res.reverse()
 
         def KeysGen():
-            for _ in range(len(res)):
+            for _ in res:
                 yield res
             return
 
@@ -147,26 +152,29 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             Returns an iterator of all values in hash table
         key = k:
             Returns an iterator of all values in the bottom-hash-table for k.
+
+        :Best case complexity: O(linear_probe(key) + N) when key is not None. N is the Outer table size.
+        :Worst case complexity: O(N * M) when key is None. N is the Outer table size,
+                                and M is the Inner table size.
         """
         res = []
         if key is not None:
-            pos1 = self.hash1(key)
+            pos1 = self._linear_probe(key, None ,False)
             sub_table = self.array[pos1][1]
             for i in range(sub_table.table_size):
                 if sub_table.array[i] is not None:
-                    res.append(sub_table.array[i][1])
-            
+                    res.append(sub_table.array[i][1])    
         else:
             for i in range(self.table_size):
                 if self.array[i] is not None:
-                    for j in range(self.table_size):
+                    for j in range(self.array[i][1].table_size):
                         if self.array[i][1].array[j] is not None:
                             res.append(self.array[i][1].array[j][1])
 
         res.reverse()
 
         def ValuesGen():
-            for _ in range(len(res)):
+            for _ in res:
                 yield res
             return
 
@@ -176,22 +184,22 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         key = None: returns all top-level keys in the table.
         key = x: returns all bottom-level keys for top-level key x.
-        """
-        res = []
-        if key is not None:
-            keyIter = self.iter_keys(key)
-            res = next(keyIter)
 
+        :complexity: See iter_keys.
+        """
+        if key is not None:
+            keyIter = self.iter_keys(key) 
         else:
             keyIter = self.iter_keys()
-            res = next(keyIter)
 
-        return res
+        return next(keyIter)
 
     def values(self, key: K1 | None = None) -> list[V]:
         """
         key = None: returns all values in the table.
         key = x: returns all values for top-level key x.
+
+        :complexity: See iter_values.
         """
         res = []
         if key is not None:
@@ -249,9 +257,10 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         Deletes a (key, value) pair in our hash table.
 
+        :complexity: O(linear_probe(key1, key2) + M) where M is the Inner table size.
         :raises KeyError: when the key doesn't exist.
         """
-        pos1, pos2 = self._linear_probe(key[0],key[1], True)
+        pos1, pos2 = self._linear_probe(key[0],key[1], False)
         
         self.array[pos1][1].array[pos2] = None
         self.count -= 1
@@ -310,5 +319,16 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         String representation.
 
         Not required but may be a good testing tool.
+        :complexity: O(N * M) where N is the Outer table sizes and M is the Inner table sizes
         """
-        raise NotImplementedError()
+        result = ""
+        for item in self.array:
+            if item is not None:
+                (key, value) = item
+                result += "(" + str(key) + ": [" 
+                for item2 in value.array:
+                    if item2 is not None:
+                        (key2, value2) = item2
+                        result += "(" + str(key2) + ", " + str(value2) + ")"
+                result += "]\n"
+        return result
