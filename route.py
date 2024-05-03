@@ -27,9 +27,9 @@ class RouteSplit:
     def remove_branch(self) -> RouteStore:  #leaves the top of a split and should just remove a series.
         """Removes the branch, should just leave the remaining following route."""
         
-        newRouteStore = RouteStore(self.top)
+        noBranch = RouteSeries(self.following.store.computer, self.following.store.following) 
 
-        return newRouteStore
+        return noBranch
         
 
         
@@ -54,56 +54,47 @@ class RouteSeries:
         """
         self.computer = None
 
-        return RouteStore
+        return self
 
     def add_computer_before(self, computer: Computer) -> RouteStore:
         """
         Returns a route store which would be the result of:
         Adding a computer in series before the current one.
         """
-        theSecondComputer = RouteSeries(self.computer,self.following)
+        
+        newComputer = RouteSeries(computer, Route(self.computer))
+        
 
-        fullRoute = RouteSeries(computer,theSecondComputer)
-
-        return fullRoute
+        return self
 
     def add_computer_after(self, computer: Computer) -> RouteStore:
         """
         Returns a route store which would be the result of:
         Adding a computer after the current computer, but before the following route.
         """
-        theFirstComputer = RouteSeries(self.computer,self.following)
+        theSecondComputer = RouteSeries(computer, Route(None))
+        self.following = Route(theSecondComputer)
 
-        fullRoute = RouteSeries(computer,theFirstComputer)
-
-        return fullRoute
+        return self
+    
 
     def add_empty_branch_before(self) -> RouteStore:
         """Returns a route store which would be the result of:
         Adding an empty branch, where the current routestore is now the following path.
         """
-        theSeriesRoute = RouteSeries(self.computer,self.following)
+        curr = RouteSeries(self.computer, self.following)
 
-        theAddedBranch = RouteSeries(None,theSeriesRoute)
-
-        return theAddedBranch
+        return RouteSplit(None, None, curr)        
 
     def add_empty_branch_after(self) -> RouteStore:
         """
         Returns a route store which would be the result of:
         Adding an empty branch after the current computer, but before the following route.
         """
-        
+        emptyBranch = RouteSplit(None, None, None)
+        self.following = Route(emptyBranch)
 
-        theHead = RouteSeries(self.computer,emptybranch)
-
-        thefollowing = RouteSeries(None,self.following)
-
-        emptybranch = RouteSeries(None,thefollowing)
-
-        
-
-        return theHead
+        return self
 
 
 RouteStore = Union[RouteSplit, RouteSeries, None]
@@ -112,16 +103,16 @@ RouteStore = Union[RouteSplit, RouteSeries, None]
 @dataclass
 class Route:
 
-    store: RouteStore = None
+    store: RouteStore 
 
     def add_computer_before(self, computer: Computer) -> Route:
         """
         Returns a *new* route which would be the result of:
         Adding a computer before everything currently in the route.
         """
-        theComputer = RouteSeries(computer,None)
-
-        return Route(theComputer,self.store)
+        theComputer = RouteSeries(computer, Route(None))
+        
+        return Route(theComputer)
 
 
 
@@ -130,49 +121,62 @@ class Route:
         Returns a *new* route which would be the result of:
         Adding an empty branch before everything currently in the route.
         """
-        theEmptyBranch = RouteSeries
+        theEmptyBranch = RouteSplit(Route(None), Route(None), Route(None))
 
-        return Route(theEmptyBranch,self.store)
+        return Route(theEmptyBranch)
 
-    def follow_path(self, virus_type: VirusType) -> None:
-        """Follow a path and add computers according to a virus_type."""
+
+def follow_path(self, virus_type: VirusType) -> None:
+    """Follow a path and add computers according to a virus_type."""
         #the time complexity is O(n + m) where n is the amount of branches and m is the amount of computers
 
-        while type(self.store.following) != None: 
-            
-            virus_type.add_computer
-            virus_type.select_branch
-        
-
-
-
-    def add_all_computers(self) -> list[Computer]:
-        """Returns a list of all computers on the route."""
-        #O(n) where n is the amount of branches traversed
-        
-        added_computers = list                              
-        branch = self.store
-
-        if type(branch.following) == None:
-            
-            return added_computers.append(branch.computer)
-        
-        else:
-            added_computers.append(branch.computer)
-            branch = branch.following
-            added_computers.extend(self.add_all_computers)
-        
-        """
-        this is for if the list needs no nones in it but otherwise use added_computer 
-        no_nones_added_computers = list
-
-        for element in added_computers:         #O(n) where n is the length of added computers
-            if element != None:
-                no_nones_added_computers.append(element)
-        return no_nones_added_computers
+    while self.store.following != None: 
+        if self.store.following == RouteSeries:
+            virus_type.add_computer(self.store.computer)
+            virus_type.select_branch(self.store.following, None)
+        elif self.store.following == RouteSplit:
+            self.follow_path_split_solution(virus_type)
+            virus_type.select_branch(self.store.top,self.store.bottom)
                 
-        """
-        return added_computers
+
+                
+
+
+def follow_path_split_solution(self, virus_type: VirusType) -> None:
+        
+    if self.store.following.store == RouteSeries:
+        virus_type.add_computer(self.store.following.store.computer)
+
+    elif self.store.following.store== RouteSplit: 
+        virus_type.select_branch(self.store.following.store.top , self.store.following.store.bottom)
+        self.follow_path_split_solution(self.store.following,virus_type)
+            
+            
+        
+
+def add_all_computers(self) -> list[Computer]:
+    """Returns a list of all computers on the route."""
+    #O(n) where n is the amount of branches traversed
+    
+    added_computers = list                              
+    branch = self.store
+
+    if type(branch.following.store) == None:
+        
+        return added_computers.append(branch.computer)
+    
+    elif type(branch.following.store) == RouteSeries:
+        added_computers.append(branch.computer)
+        branch = branch.following
+        added_computers.extend(self.add_all_computers)
+    else:
+        added_computers.append(branch.following.store.top.store.computer)
+        added_computers.append(branch.following.store.bottom.store.computer)
+        branch = branch.following
+        added_computers.extend(self.add_all_computers)
+    
+    
+    return added_computers
     
 
         

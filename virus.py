@@ -84,7 +84,7 @@ class RiskAverseVirus(VirusType):
         
         if top_comp.risk_factor == 0.0 and bot_comp.risk_factor == 0.0:
             
-            if top_comp.hacking_difficulty < bot_comp.hacking_difficulty:
+            if top_comp < bot_comp:
                 return BranchDecision.TOP
             
             if bot_comp.hacking_difficulty < top_comp.hacking_difficulty:
